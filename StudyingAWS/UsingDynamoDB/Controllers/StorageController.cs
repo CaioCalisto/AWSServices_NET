@@ -1,0 +1,77 @@
+using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.Model;
+using Microsoft.AspNetCore.Mvc;
+
+namespace UsingDynamoDB.Controllers;
+
+[ApiController]
+[Route("[controller]")]
+public class StorageController : ControllerBase
+{
+    private readonly ILogger<StorageController> _logger;
+    private readonly IAmazonDynamoDB _dynamoDb;
+
+    public StorageController(ILogger<StorageController> logger, IAmazonDynamoDB dynamoDb)
+    {
+        _logger = logger;
+        _dynamoDb = dynamoDb;
+    }
+    
+    [HttpGet("tables")]
+    public async Task<IActionResult> GetAllTables()
+    {
+        var tables = await _dynamoDb.ListTablesAsync();
+        return Ok(tables.TableNames);
+    }
+
+    [HttpPost("tables")]
+    public async Task<IActionResult> CreateTable(string tableName)
+    {
+        var tables = await _dynamoDb.ListTablesAsync();
+        if (!tables.TableNames.Contains(tableName))
+        {
+            var request = new CreateTableRequest()
+            {
+                TableName = tableName,
+                AttributeDefinitions = new List<AttributeDefinition>
+                {
+                    new AttributeDefinition
+                    {
+                        AttributeName = "Id",
+                        // "S" = string, "N" = number, and so on.
+                        AttributeType = "N"
+                    },
+                    new AttributeDefinition
+                    {
+                        AttributeName = "Type",
+                        AttributeType = "S"
+                    }
+                },
+                KeySchema = new List<KeySchemaElement>
+                {
+                    new KeySchemaElement
+                    {
+                        AttributeName = "Id",
+                        // "HASH" = hash key, "RANGE" = range key.
+                        KeyType = "HASH"
+                    },
+                    new KeySchemaElement
+                    {
+                        AttributeName = "Type",
+                        KeyType = "RANGE"
+                    },
+                },
+                ProvisionedThroughput = new ProvisionedThroughput
+                {
+                    ReadCapacityUnits = 10,
+                    WriteCapacityUnits = 5
+                },
+            };
+
+            var response = await this._dynamoDb.CreateTableAsync(request);
+            return Ok(new { DynamoDbStatusCode = response.HttpStatusCode});
+        }
+        
+        return BadRequest(new { Detail = "Table already exists!"});
+    }
+}
