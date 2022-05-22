@@ -25,14 +25,14 @@ public class StorageController : ControllerBase
     }
 
     [HttpPost("tables")]
-    public async Task<IActionResult> CreateTable(string tableName)
+    public async Task<IActionResult> CreateTable()
     {
         var tables = await _dynamoDb.ListTablesAsync();
-        if (!tables.TableNames.Contains(tableName))
+        if (!tables.TableNames.Contains("Employees"))
         {
             var request = new CreateTableRequest()
             {
-                TableName = tableName,
+                TableName = "Employees",
                 AttributeDefinitions = new List<AttributeDefinition>
                 {
                     new AttributeDefinition
