@@ -9,9 +9,9 @@ namespace UsingDynamoDB.Controllers;
 public class StorageController : ControllerBase
 {
     private readonly ILogger<StorageController> _logger;
-    private readonly IAmazonDynamoDB _dynamoDb;
+    private readonly AmazonDynamoDBClient _dynamoDb;
 
-    public StorageController(ILogger<StorageController> logger, IAmazonDynamoDB dynamoDb)
+    public StorageController(ILogger<StorageController> logger, AmazonDynamoDBClient dynamoDb)
     {
         _logger = logger;
         _dynamoDb = dynamoDb;

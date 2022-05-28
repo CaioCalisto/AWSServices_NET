@@ -23,16 +23,23 @@ public class EmployeesController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> CreateEmployee([FromBody] Employee employee)
     {
+        int employeeId = id;
         var request = new PutItemRequest()
         {
             TableName = "Employees",
             Item = new Dictionary<string, AttributeValue>()
             {
                 { "Id", new AttributeValue {
-                    N = id.ToString()
+                    N = employeeId.ToString()
                 }},
-                { "Name", new AttributeValue {
+                { "EmployeeName", new AttributeValue {
                     S = employee.Name
+                }},
+                { "EmployeeRole", new AttributeValue {
+                    S = employee.Role
+                }},
+                { "EmployeeTeam", new AttributeValue {
+                    S = employee.Team
                 }}
             }
         };
@@ -41,20 +48,32 @@ public class EmployeesController : ControllerBase
 
         id++;
         
-        return Ok(new { id = id});
+        return Ok(new { Status = response.HttpStatusCode.ToString(), id = employeeId});
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetEmployees()
+    [HttpGet("{key}")]
+    public async Task<IActionResult> GetEmployee(string key)
     {
+        var request = new GetItemRequest
+        {
+            TableName = "Employees",
+            Key = new Dictionary<string, AttributeValue>()
+            {
+                { "Id", new AttributeValue {
+                    N = key
+                } }
+            },
+            ProjectionExpression = "Id, EmployeeName, EmployeeRole, EmployeeTeam",
+            ConsistentRead = true
+        };
+        var response = await _client.GetItemAsync(request);
         
-        return Ok();
+        return Ok(DeserializeToEmployee(response.Item));
     }
-    
-    [HttpGet("{key:int}")]
-    public async Task<IActionResult> GetEmployee(int key)
-    {
-        
-        return Ok();
-    }
+
+    private Employee DeserializeToEmployee(Dictionary<string, AttributeValue> attributeValues) =>
+        new Employee(
+            attributeValues["EmployeeName"].S, 
+            attributeValues["EmployeeRole"].S, 
+            attributeValues["EmployeeTeam"].S);
 }
