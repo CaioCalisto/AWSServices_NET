@@ -12,7 +12,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // builder.Services.AddAWSService<IAmazonS3>(); //This doesn't work
-builder.Services.AddSingleton<IAmazonDynamoDB>(_ =>
+builder.Services.AddSingleton<AmazonDynamoDBClient>(_ =>
 {
     return new AmazonDynamoDBClient(new AmazonDynamoDBConfig() {
         UseHttp = true,

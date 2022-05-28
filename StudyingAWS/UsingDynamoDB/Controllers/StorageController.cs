@@ -40,11 +40,6 @@ public class StorageController : ControllerBase
                         AttributeName = "Id",
                         // "S" = string, "N" = number, and so on.
                         AttributeType = "N"
-                    },
-                    new AttributeDefinition
-                    {
-                        AttributeName = "Type",
-                        AttributeType = "S"
                     }
                 },
                 KeySchema = new List<KeySchemaElement>
@@ -54,12 +49,7 @@ public class StorageController : ControllerBase
                         AttributeName = "Id",
                         // "HASH" = hash key, "RANGE" = range key.
                         KeyType = "HASH"
-                    },
-                    new KeySchemaElement
-                    {
-                        AttributeName = "Type",
-                        KeyType = "RANGE"
-                    },
+                    }
                 },
                 ProvisionedThroughput = new ProvisionedThroughput
                 {

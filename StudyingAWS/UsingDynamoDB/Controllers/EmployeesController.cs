@@ -1,6 +1,7 @@
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
+using Amazon.DynamoDBv2.Model;
 using Microsoft.AspNetCore.Mvc;
 
 namespace UsingDynamoDB.Controllers;
@@ -11,42 +12,49 @@ public class EmployeesController : ControllerBase
 {
     private int id = 1;
     private readonly ILogger<StorageController> _logger;
-    private readonly IAmazonDynamoDB _dynamoDb;
+    private readonly AmazonDynamoDBClient _client;
 
-    public EmployeesController(ILogger<StorageController> logger, IAmazonDynamoDB dynamoDb)
+    public EmployeesController(ILogger<StorageController> logger, AmazonDynamoDBClient client)
     {
         _logger = logger;
-        _dynamoDb = dynamoDb;
+        _client = client;
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateEmployee([FromBody] Employee employee)
     {
-        using (var context = new DynamoDBContext(_dynamoDb))
+        var request = new PutItemRequest()
         {
-            EmployeeDocument document = new EmployeeDocument()
+            TableName = "Employees",
+            Item = new Dictionary<string, AttributeValue>()
             {
-                Id = id,
-                Name = employee.Name,
-                Type = "Employee",
-                Team = employee.Team,
-                Role = employee.Role
-            };
-            await context.SaveAsync(document);
-        }
+                { "Id", new AttributeValue {
+                    N = id.ToString()
+                }},
+                { "Name", new AttributeValue {
+                    S = employee.Name
+                }}
+            }
+        };
+
+        var response = await _client.PutItemAsync(request);
 
         id++;
         
-        return Ok();
+        return Ok(new { id = id});
     }
 
+    [HttpGet]
+    public async Task<IActionResult> GetEmployees()
+    {
+        
+        return Ok();
+    }
+    
     [HttpGet("{key:int}")]
     public async Task<IActionResult> GetEmployee(int key)
     {
-        var table = Table.LoadTable(_dynamoDb, "Employees");
-        var item = await table.GetItemAsync(key, "Employee");
-        Employee employee = new Employee(item["Name"], item["Role"], item["Team"]);
-
-        return Ok(employee);
+        
+        return Ok();
     }
 }
