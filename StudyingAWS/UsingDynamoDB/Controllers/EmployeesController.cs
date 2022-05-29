@@ -89,10 +89,33 @@ public class EmployeesController : ControllerBase
         using (var context = GetContext())
         {
             var result = await context.LoadAsync<EmployeeDocument>(id);
-            return Ok(result);
+            return Ok(Map(result));
         }
     }
 
+    [HttpGet("byName/{name}")]
+    public async Task<IActionResult> GetByName(string name)
+    {
+        using (var context = GetContext())
+        {
+            var search = context.ScanAsync<EmployeeDocument>(
+                new[]
+                {
+                    new ScanCondition
+                    (
+                        nameof(EmployeeDocument.Name),
+                        ScanOperator.Equal,
+                        name
+                    )
+                });
+            var result = await search.GetRemainingAsync();
+            if (!result.Any())
+                return NotFound();
+            
+            return Ok(Map(result.First()));
+        }
+    }
+    
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(string id)
     {
@@ -107,9 +130,12 @@ public class EmployeesController : ControllerBase
     {
         foreach (var employee in employees)
         {
-            yield return new Employee(employee.Id, employee.Name, employee.Role, employee.Team);
+            yield return Map(employee);
         }
     }
 
+    private Employee Map(EmployeeDocument employee) =>
+        new (employee.Id, employee.Name, employee.Role, employee.Team);
+    
     private IDynamoDBContext GetContext() => new DynamoDBContext(_client);
 }
