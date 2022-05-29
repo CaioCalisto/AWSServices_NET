@@ -33,6 +33,29 @@ public class EmployeesController : ControllerBase
         return Ok(new { id = employee.Id});
     }
 
+    [HttpPost("batch")]
+    public async Task<IActionResult> CreateBatch([FromBody] IEnumerable<Employee> employees)
+    {
+        using (var context = GetContext())
+        {
+            var batch = context.CreateBatchWrite<EmployeeDocument>();
+            foreach (var employee in employees)
+            {
+                batch.AddPutItem(new EmployeeDocument()
+                {
+                    Id = employee.Id,
+                    Name = employee.Name,
+                    Role = employee.Role,
+                    Team = employee.Team
+                });
+            }
+
+            await batch.ExecuteAsync();
+
+            return Ok();
+        }
+    }
+
     [HttpGet("query")]
     public async Task<IActionResult> GetAllEmployee([FromQuery]string? paginationToken = null)
     {
