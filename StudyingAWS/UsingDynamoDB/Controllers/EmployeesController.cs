@@ -33,8 +33,8 @@ public class EmployeesController : ControllerBase
         return Ok(new { id = employee.Id});
     }
 
-    [HttpGet("query/")]
-    public async Task<IActionResult> GetAllEmployee()
+    [HttpGet("query")]
+    public async Task<IActionResult> GetAllEmployee([FromQuery]string? paginationToken = null)
     {
         using (var context = GetContext())
         {
@@ -44,7 +44,8 @@ public class EmployeesController : ControllerBase
                 Limit = 2
             };
 
-            //scanOps.PaginationToken = "";
+            if (!string.IsNullOrEmpty(paginationToken)) 
+                scanOps.PaginationToken = paginationToken;
 
             var results = table.Scan(scanOps);
             List<Document> data = await results.GetNextSetAsync();
@@ -56,15 +57,7 @@ public class EmployeesController : ControllerBase
             });
         }
     }
-
-    private IEnumerable<Employee> MapToEmployees(IEnumerable<EmployeeDocument> employees)
-    {
-        foreach (var employee in employees)
-        {
-            yield return new Employee(employee.Id, employee.Name, employee.Role, employee.Team);
-        }
-    }
-
+    
     [HttpGet("{id}")]
     public async Task<IActionResult> GetEmployee(string id)
     {
@@ -72,6 +65,14 @@ public class EmployeesController : ControllerBase
         {
             var result = await context.LoadAsync<EmployeeDocument>(id);
             return Ok(result);
+        }
+    }
+
+    private IEnumerable<Employee> MapToEmployees(IEnumerable<EmployeeDocument> employees)
+    {
+        foreach (var employee in employees)
+        {
+            yield return new Employee(employee.Id, employee.Name, employee.Role, employee.Team);
         }
     }
 
