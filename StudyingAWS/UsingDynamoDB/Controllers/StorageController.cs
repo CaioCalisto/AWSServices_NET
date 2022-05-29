@@ -8,26 +8,23 @@ namespace UsingDynamoDB.Controllers;
 [Route("[controller]")]
 public class StorageController : ControllerBase
 {
-    private readonly ILogger<StorageController> _logger;
-    private readonly AmazonDynamoDBClient _dynamoDb;
-
-    public StorageController(ILogger<StorageController> logger, AmazonDynamoDBClient dynamoDb)
+    private readonly IAmazonDynamoDB _amazonDynamoDb;
+    public StorageController(IAmazonDynamoDB amazonDynamoDb)
     {
-        _logger = logger;
-        _dynamoDb = dynamoDb;
+        _amazonDynamoDb = amazonDynamoDb;
     }
     
     [HttpGet("tables")]
     public async Task<IActionResult> GetAllTables()
     {
-        var tables = await _dynamoDb.ListTablesAsync();
+        var tables = await _amazonDynamoDb.ListTablesAsync();
         return Ok(tables.TableNames);
     }
 
     [HttpPost("tables")]
     public async Task<IActionResult> CreateTable()
     {
-        var tables = await _dynamoDb.ListTablesAsync();
+        var tables = await _amazonDynamoDb.ListTablesAsync();
         if (!tables.TableNames.Contains("Employees"))
         {
             var request = new CreateTableRequest()
@@ -58,7 +55,7 @@ public class StorageController : ControllerBase
                 },
             };
 
-            var response = await this._dynamoDb.CreateTableAsync(request);
+            var response = await this._amazonDynamoDb.CreateTableAsync(request);
             return Ok(new { DynamoDbStatusCode = response.HttpStatusCode});
         }
         

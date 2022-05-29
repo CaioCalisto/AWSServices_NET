@@ -1,4 +1,5 @@
 using Amazon.DynamoDBv2;
+using Amazon.DynamoDBv2.DataModel;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,7 +13,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 // builder.Services.AddAWSService<IAmazonS3>(); //This doesn't work
-builder.Services.AddSingleton<AmazonDynamoDBClient>(_ =>
+builder.Services.AddTransient<IDynamoDBContext, DynamoDBContext>();
+builder.Services.AddSingleton<IAmazonDynamoDB>(_ =>
 {
     return new AmazonDynamoDBClient(new AmazonDynamoDBConfig() {
         UseHttp = true,
