@@ -57,15 +57,17 @@ public class EmployeesController : ControllerBase
     }
 
     [HttpGet("query")]
-    public async Task<IActionResult> GetAllEmployee([FromQuery]string? paginationToken = null)
+    public async Task<IActionResult> GetAllEmployee([FromQuery]string? paginationToken = null, [FromQuery]int? limit = 0)
     {
         using (var context = GetContext())
         {
             var table = context.GetTargetTable<EmployeeDocument>();
-            var scanOps = new ScanOperationConfig()
-            {
-                Limit = 2
-            };
+            var scanOps = new ScanOperationConfig();
+
+            if (limit == 0)
+                scanOps.Limit = 2;
+            else
+                scanOps.Limit = limit.Value;
 
             if (!string.IsNullOrEmpty(paginationToken)) 
                 scanOps.PaginationToken = paginationToken;
