@@ -68,6 +68,16 @@ public class EmployeesController : ControllerBase
         }
     }
 
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(string id)
+    {
+        using (var context = GetContext())
+        {
+            await context.DeleteAsync<EmployeeDocument>(id);
+            return Ok();
+        }
+    }
+
     private IEnumerable<Employee> MapToEmployees(IEnumerable<EmployeeDocument> employees)
     {
         foreach (var employee in employees)
