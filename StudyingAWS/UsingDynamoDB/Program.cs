@@ -12,14 +12,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddTransient<IDynamoDBContext, DynamoDBContext>();
-builder.Services.AddSingleton<IAmazonDynamoDB>(_ =>
-{
-    return new AmazonDynamoDBClient(new AmazonDynamoDBConfig() {
-        UseHttp = true,
-        ServiceURL = configuration["AWS:ServiceUrl"]
-    });
-});
+builder.Services.AddDefaultAWSOptions(configuration.GetAWSOptions());
+builder.Services.AddAWSService<IAmazonDynamoDB>();
+builder.Services.AddSingleton<IDynamoDBContext, DynamoDBContext>();
 
 var app = builder.Build();
 
