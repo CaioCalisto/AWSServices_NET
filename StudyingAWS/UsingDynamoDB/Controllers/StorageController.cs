@@ -39,7 +39,7 @@ public class StorageController : ControllerBase
                     {
                         AttributeName = "Id",
                         // "S" = string, "N" = number, and so on.
-                        AttributeType = "N"
+                        AttributeType = "S"
                     }
                 },
                 KeySchema = new List<KeySchemaElement>

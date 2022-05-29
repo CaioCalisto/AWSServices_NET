@@ -1,7 +1,6 @@
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.DataModel;
 using Amazon.DynamoDBv2.DocumentModel;
-using Amazon.DynamoDBv2.Model;
 using Microsoft.AspNetCore.Mvc;
 
 namespace UsingDynamoDB.Controllers;
@@ -10,70 +9,71 @@ namespace UsingDynamoDB.Controllers;
 [Route("[controller]")]
 public class EmployeesController : ControllerBase
 {
-    private int id = 1;
-    private readonly ILogger<StorageController> _logger;
     private readonly AmazonDynamoDBClient _client;
-
-    public EmployeesController(ILogger<StorageController> logger, AmazonDynamoDBClient client)
+    
+    public EmployeesController(AmazonDynamoDBClient client)
     {
-        _logger = logger;
         _client = client;
     }
 
     [HttpPost]
     public async Task<IActionResult> CreateEmployee([FromBody] Employee employee)
     {
-        int employeeId = id;
-        var request = new PutItemRequest()
+        using (var context = GetContext())
         {
-            TableName = "Employees",
-            Item = new Dictionary<string, AttributeValue>()
+            await context.SaveAsync(new EmployeeDocument()
             {
-                { "Id", new AttributeValue {
-                    N = employeeId.ToString()
-                }},
-                { "EmployeeName", new AttributeValue {
-                    S = employee.Name
-                }},
-                { "EmployeeRole", new AttributeValue {
-                    S = employee.Role
-                }},
-                { "EmployeeTeam", new AttributeValue {
-                    S = employee.Team
-                }}
-            }
-        };
+                Id = employee.Id,
+                Name = employee.Name,
+                Role = employee.Role,
+                Team = employee.Team
+            });
+        }
 
-        var response = await _client.PutItemAsync(request);
-
-        id++;
-        
-        return Ok(new { Status = response.HttpStatusCode.ToString(), id = employeeId});
+        return Ok(new { id = employee.Id});
     }
 
-    [HttpGet("{key}")]
-    public async Task<IActionResult> GetEmployee(string key)
+    [HttpGet("query/")]
+    public async Task<IActionResult> GetAllEmployee()
     {
-        var request = new GetItemRequest
+        using (var context = GetContext())
         {
-            TableName = "Employees",
-            Key = new Dictionary<string, AttributeValue>()
+            var table = context.GetTargetTable<EmployeeDocument>();
+            var scanOps = new ScanOperationConfig()
             {
-                { "Id", new AttributeValue {
-                    N = key
-                } }
-            },
-            ProjectionExpression = "Id, EmployeeName, EmployeeRole, EmployeeTeam",
-            ConsistentRead = true
-        };
-        var response = await _client.GetItemAsync(request);
-        
-        return Ok(DeserializeToEmployee(response.Item));
+                Limit = 2
+            };
+
+            //scanOps.PaginationToken = "";
+
+            var results = table.Scan(scanOps);
+            List<Document> data = await results.GetNextSetAsync();
+            IEnumerable<EmployeeDocument> employees = context.FromDocuments<EmployeeDocument>(data);
+
+            return Ok(new EmployeeViewModel() {
+                PaginationToken = results.PaginationToken,
+                Employees = MapToEmployees(employees),
+            });
+        }
     }
 
-    private Employee DeserializeToEmployee(Dictionary<string, AttributeValue> attributeValues) =>
-        new Employee(
-            attributeValues["EmployeeName"].S, 
-            attributeValues["EmployeeRole"].S, 
-            attributeValues["EmployeeTeam"].S);
+    private IEnumerable<Employee> MapToEmployees(IEnumerable<EmployeeDocument> employees)
+    {
+        foreach (var employee in employees)
+        {
+            yield return new Employee(employee.Id, employee.Name, employee.Role, employee.Team);
+        }
+    }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetEmployee(string id)
+    {
+        using (var context = GetContext())
+        {
+            var result = await context.LoadAsync<EmployeeDocument>(id);
+            return Ok(result);
+        }
+    }
+
+    private IDynamoDBContext GetContext() => new DynamoDBContext(_client);
 }
