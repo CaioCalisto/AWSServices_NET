@@ -12,7 +12,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// builder.Services.AddAWSService<IAmazonS3>(); //This doesn't work
 builder.Services.AddTransient<IDynamoDBContext, DynamoDBContext>();
 builder.Services.AddSingleton<IAmazonDynamoDB>(_ =>
 {
