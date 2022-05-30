@@ -19,6 +19,14 @@ public class CustomBackgroundService : BackgroundService
     {
         var queueUrl = await CreateQueueIfNotExists();
 
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            SendMessageResponse responseSendMsg =
+                await _amazonSqs.SendMessageAsync(queueUrl, "Hello world!!");
+            _logger.LogInformation($"Message sent, status {responseSendMsg.HttpStatusCode.ToString()}");
+            
+            await Task.Delay(TimeSpan.FromSeconds(2));
+        }
     }
 
     private async Task<string> CreateQueueIfNotExists()
