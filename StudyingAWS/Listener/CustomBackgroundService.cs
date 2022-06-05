@@ -1,3 +1,4 @@
+using System.Net;
 using Amazon.SQS;
 using Amazon.SQS.Model;
 
@@ -20,13 +21,20 @@ public class CustomBackgroundService: BackgroundService
         string queueUrl = await GetQueueUrl();
         while (!stoppingToken.IsCancellationRequested)
         {
-            var message = await _amazonSqs.ReceiveMessageAsync(new ReceiveMessageRequest{
+            var response = await _amazonSqs.ReceiveMessageAsync(new ReceiveMessageRequest{
                 QueueUrl = queueUrl,
                 MaxNumberOfMessages = 10,
                 WaitTimeSeconds = 1
             });
-            
-            _logger.LogInformation($"Received {message.Messages}");
+
+            if (response.HttpStatusCode == HttpStatusCode.OK && response.Messages.Any())
+            {
+                foreach (var message in response.Messages)
+                {
+                    _logger.LogInformation($"Received {message.Body}");
+                    await _amazonSqs.DeleteMessageAsync(queueUrl, message.ReceiptHandle);
+                }
+            }
         }
     }
 
